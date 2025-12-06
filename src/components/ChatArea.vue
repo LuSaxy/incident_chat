@@ -3,12 +3,13 @@ import { ref, watch, nextTick } from 'vue';
 import { Send, Loader2, PanelLeft, PanelLeftClose } from 'lucide-vue-next';
 import type { Session } from '../types';
 import MessageBubble from './MessageBubble.vue';
+import GameOverlay from './game/GameOverlay.vue';
 
 const props = defineProps<{
   session: Session | null;
   isLoading: boolean;
   isTyping: boolean;
-  isSidebarOpen?: boolean;
+  isSidebarOpen: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 
 const input = ref('');
 const messagesEndRef = ref<HTMLDivElement | null>(null);
+const showGame = ref(false);
 
 const scrollToBottom = async () => {
     await nextTick();
@@ -52,13 +54,25 @@ const autoResize = (e: Event) => {
 </script>
 
 <template>
+  <GameOverlay v-if="showGame" @close="showGame = false" />
+
   <div v-if="!session" class="flex-1 flex items-center justify-center bg-slate-900 flex-col text-slate-400 relative overflow-hidden">
     <!-- Retro Grid Background -->
     <div class="absolute inset-0 bg-[linear-gradient(rgba(18,16,11,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(255,0,0,0.02),rgba(255,0,0,0.06))] z-0 bg-[length:100%_4px,6px_100%] pointer-events-none"></div>
     <div class="absolute inset-0 bg-grid-slate-800/20 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.1))] bg-[size:40px_40px]"></div>
     
     <div class="relative z-10 flex flex-col items-center animate-fade-in-up">
-      <div class="relative group cursor-default">
+      <!-- Toggle for empty state too -->
+      <button 
+           @click="emit('toggleSidebar')"
+           class="absolute top-4 left-4 p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors z-50 md:hidden"
+           title="Toggle Sidebar"
+         >
+            <PanelLeft v-if="!props.isSidebarOpen" :size="20" />
+            <PanelLeftClose v-else :size="20" />
+      </button>
+
+      <div class="relative group cursor-pointer" @click="showGame = true">
         <!-- Glow effect -->
         <div class="absolute -inset-4 bg-orange-500/20 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
         
@@ -70,10 +84,19 @@ const autoResize = (e: Event) => {
         
         <!-- Scanline overlay on image -->
         <div class="absolute inset-0 pointer-events-none rounded-xl bg-gradient-to-b from-transparent via-white/5 to-transparent opacity-20"></div>
+        
+        <!-- Play Button Overlay -->
+        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+             <div class="bg-black/50 backdrop-blur-sm p-4 rounded-full border-2 border-white/20">
+                 <span class="font-mono text-white text-xl font-bold tracking-widest">PLAY NOW</span>
+             </div>
+        </div>
       </div>
       
       <div class="mt-12 text-center">
-        <p class="text-orange-500 font-bold tracking-[0.2em] text-sm mb-4 animate-pulse">PRESS START TO BEGIN</p>
+        <button @click="showGame = true" class="text-orange-500 font-bold tracking-[0.2em] text-sm mb-4 animate-pulse hover:text-orange-400 transition-colors">
+            PRESS START TO BEGIN
+        </button>
         <p class="text-xs text-slate-600 font-mono">v1.0.0 • SYSTEM READY</p>
       </div>
     </div>
@@ -86,7 +109,7 @@ const autoResize = (e: Event) => {
       <div class="flex items-center gap-3">
          <button 
            @click="emit('toggleSidebar')"
-           class="p-2 -ml-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+           class="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors md:hidden"
            title="Toggle Sidebar"
          >
             <PanelLeft v-if="!props.isSidebarOpen" :size="20" />
@@ -161,7 +184,7 @@ const autoResize = (e: Event) => {
         
         <div class="text-center mt-3 flex items-center justify-center gap-2 opacity-0 group-focus-within:opacity-100 transition-opacity duration-500">
            <span class="text-[10px] text-slate-400 font-medium">
-              Powered by FinOps & N8N
+              Powered by FinOps Bro
            </span>
         </div>
       </div>
