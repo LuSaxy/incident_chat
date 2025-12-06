@@ -82,27 +82,50 @@ export function useChat() {
         isLoading.value = true;
 
         try {
-            const response = await sendMessageToN8N(content, updatedSession.id, updatedSession.messages);
-
+            // Optimistic bot message (Loading state)
             const botMsg: Message = {
                 id: uuidv4(),
-                content: response,
+                content: '...', // Placeholder
                 sender: 'bot',
                 timestamp: new Date().toISOString()
             };
 
-            const finalSession = {
+            const initialSession = {
                 ...updatedSession,
                 updatedAt: Date.now(),
                 messages: [...updatedSession.messages, botMsg]
             };
+            currentSession.value = initialSession;
 
-            currentSession.value = finalSession;
-            if (!finalSession.isEphemeral) {
-                storage.saveSession(finalSession);
+            // Fetch response (Non-streaming)
+            const responseText = await sendMessageToN8N(content, updatedSession.id, updatedSession.messages);
+
+            // Update bot message with real content
+            if (currentSession.value) {
+                const msgs: Message[] = [...currentSession.value.messages];
+                // Replace the last message (placeholder) with real content
+                const lastMsg = { ...msgs[msgs.length - 1], content: responseText };
+                msgs[msgs.length - 1] = lastMsg;
+
+                currentSession.value = {
+                    ...currentSession.value,
+                    messages: msgs
+                };
+            }
+
+            // Save final session state
+            if (!updatedSession.isEphemeral && currentSession.value) {
+                storage.saveSession(currentSession.value);
                 sessions.value = storage.getSessions();
             }
+
         } catch (error) {
+            console.error('Failed to send message:', error);
+
+            // Revert optimistic update or show error
+            // ideally we'd remove the optimistic user message or add an error flag
+            // For now just stop loading
+
             const errorMsg: Message = {
                 id: uuidv4(),
                 content: "Sorry, I encountered an error connecting to the server.",

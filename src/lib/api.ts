@@ -1,6 +1,7 @@
 import type { Message } from '../types';
 
-const WEBHOOK_URL = 'https://n8n.services.ssssss.sssss.net/webhook/hybrid-chat';
+// const WEBHOOK_URL = 'https://n8n.services.ssssss.sssss.net/webhook/hybrid-chat';
+const WEBHOOK_URL = 'http://localhost:5678/webhook/23b8/chat';
 
 export async function sendMessageToN8N(
     message: string,
@@ -8,7 +9,7 @@ export async function sendMessageToN8N(
     history: Message[]
 ): Promise<string> {
     const payload = {
-        message,
+        chatInput: message, // n8n default field name
         timestamp: new Date().toISOString(),
         sessionId,
         history: history.slice(-10).map(m => ({
@@ -31,13 +32,17 @@ export async function sendMessageToN8N(
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            const data = await response.json();
-            return typeof data === 'string' ? data : (data.response || data.message || JSON.stringify(data));
-        } else {
-            return await response.text();
-        }
+        const data = await response.json();
+
+        // Smart parsing for n8n AI Agent responses
+        if (typeof data === 'string') return data;
+        if (data.output) return data.output; // Standard AI Agent output
+        if (data.text) return data.text;
+        if (data.response) return data.response;
+        if (data.message) return data.message;
+
+        return JSON.stringify(data);
+
     } catch (error) {
         console.error('API Error:', error);
         throw error;
