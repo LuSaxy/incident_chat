@@ -2,7 +2,8 @@ import { ref, onMounted } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import type { Session, Message } from '../types';
 import { storage } from '../lib/storage';
-import { sendMessageToN8N } from '../lib/api';
+import { sendMessageToN8NPromise, streamMessageFromN8N } from '../lib/api';
+import { chatConfig } from '../config/chatConfig';
 
 export function useChat() {
     const sessions = ref<Session[]>([]);
@@ -85,7 +86,7 @@ export function useChat() {
             // Optimistic bot message (Loading state)
             const botMsg: Message = {
                 id: uuidv4(),
-                content: '...', // Placeholder
+                content: chatConfig.useStreaming ? '' : '...', // Empty for stream, dots for load
                 sender: 'bot',
                 timestamp: new Date().toISOString()
             };
@@ -97,20 +98,33 @@ export function useChat() {
             };
             currentSession.value = initialSession;
 
-            // Fetch response (Non-streaming)
-            const responseText = await sendMessageToN8N(content, updatedSession.id, updatedSession.messages);
+            if (chatConfig.useStreaming) {
+                // --- STREAMING MODE ---
+                const stream = streamMessageFromN8N(content, updatedSession.id, updatedSession.messages);
+                let fullContent = '';
 
-            // Update bot message with real content
-            if (currentSession.value) {
-                const msgs: Message[] = [...currentSession.value.messages];
-                // Replace the last message (placeholder) with real content
-                const lastMsg = { ...msgs[msgs.length - 1], content: responseText };
-                msgs[msgs.length - 1] = lastMsg;
+                for await (const chunk of stream) {
+                    fullContent += chunk;
 
-                currentSession.value = {
-                    ...currentSession.value,
-                    messages: msgs
-                };
+                    if (currentSession.value) {
+                        const msgs: Message[] = [...currentSession.value.messages];
+                        const lastMsg = { ...msgs[msgs.length - 1], content: fullContent };
+                        msgs[msgs.length - 1] = lastMsg;
+
+                        currentSession.value = { ...currentSession.value, messages: msgs };
+                    }
+                }
+            } else {
+                // --- PROMISE MODE ---
+                const responseText = await sendMessageToN8NPromise(content, updatedSession.id, updatedSession.messages);
+
+                if (currentSession.value) {
+                    const msgs: Message[] = [...currentSession.value.messages];
+                    const lastMsg = { ...msgs[msgs.length - 1], content: responseText };
+                    msgs[msgs.length - 1] = lastMsg;
+
+                    currentSession.value = { ...currentSession.value, messages: msgs };
+                }
             }
 
             // Save final session state

@@ -16,7 +16,6 @@ export const gameConfig = {
         { label: "Topic Lag", type: "dynamite" },
         { label: "Reconciliation", type: "bomb" },
         { label: "Remittance", type: "fire" },
-        { label: "IP Issues", type: "dynamite" },
         { label: "Manual Work", type: "bomb" },
         { label: "Legacy Code", type: "toxic" },
         { label: "Timeout", type: "fire" },
