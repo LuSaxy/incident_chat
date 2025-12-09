@@ -1,0 +1,28 @@
+preprocess:
+  - replace:
+      path: "/dist" # path to replace
+      contents:
+      - old: "replace me with your webhook URL" # old string
+        new: "replace me with actual url" # new string
+server:
+  entrypoints:
+    web:
+      address: ":8080"
+  http:
+    middlewares:
+      project:
+        folder:
+          path: ./dist
+          browse: false
+          spa: true
+          index: true
+          cache_regex:
+            - regex: 'index\.html$'
+              cache_control: no-store
+            - regex: .*
+              cache_control: no-cache
+    routers:
+      project:
+        path: /*
+        middlewares:
+          - project
