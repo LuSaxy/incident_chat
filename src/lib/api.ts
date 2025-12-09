@@ -74,8 +74,6 @@ export async function* streamMessageFromN8N(
             // N8N Streaming Robust Parser
             // Handle concatenated JSON objects: {"type":"begin"}{"type":"token"}...
 
-            let boundaryIndex = -1;
-
             while (true) {
                 // Find start of object
                 const start = buffer.indexOf('{');

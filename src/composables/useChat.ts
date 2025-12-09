@@ -108,10 +108,11 @@ export function useChat() {
 
                     if (currentSession.value) {
                         const msgs: Message[] = [...currentSession.value.messages];
-                        const lastMsg = { ...msgs[msgs.length - 1], content: fullContent };
-                        msgs[msgs.length - 1] = lastMsg;
-
-                        currentSession.value = { ...currentSession.value, messages: msgs };
+                        const lastMsg = msgs[msgs.length - 1];
+                        if (lastMsg) {
+                            lastMsg.content = fullContent;
+                            currentSession.value = { ...currentSession.value, messages: msgs };
+                        }
                     }
                 }
             } else {
@@ -120,10 +121,11 @@ export function useChat() {
 
                 if (currentSession.value) {
                     const msgs: Message[] = [...currentSession.value.messages];
-                    const lastMsg = { ...msgs[msgs.length - 1], content: responseText };
-                    msgs[msgs.length - 1] = lastMsg;
-
-                    currentSession.value = { ...currentSession.value, messages: msgs };
+                    const lastMsg = msgs[msgs.length - 1];
+                    if (lastMsg) {
+                        lastMsg.content = responseText;
+                        currentSession.value = { ...currentSession.value, messages: msgs };
+                    }
                 }
             }
 

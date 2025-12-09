@@ -1,6 +1,6 @@
 export const chatConfig = {
     // The n8n webhook URL for the chat backend
-    webhookUrl: 'http://localhost:5678/webhook/3b8/chat',
+    webhookUrl: 'replace me with your webhook URL',
 
     // Feature flag for experimental streaming chat
     // true = use streamMessageFromN8N (AsyncGenerator)
